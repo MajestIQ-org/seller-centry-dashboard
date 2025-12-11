@@ -3,21 +3,9 @@
 import { useState, useEffect } from 'react'
 import { useTenant } from '@/lib/contexts/TenantContext'
 import { SummaryCards } from '@/components/SummaryCards'
-import { ViolationsList } from '@/components/ViolationsList'
+import { ViolationsList, type Violation } from '@/components/ViolationsList'
 import { SubmitTicket } from '@/components/SubmitTicket'
 import { InviteUser } from '@/components/InviteUser'
-
-interface Violation {
-  id: string
-  product: string
-  asin: string
-  issueType: string
-  atRiskSales: number
-  impact: string
-  status: string
-  opened: string
-  [key: string]: any
-}
 
 interface ViolationsData {
   currentViolations: Violation[]
@@ -45,38 +33,91 @@ async function fetchViolations(sheetId: string): Promise<ViolationsData> {
 }
 
 export default function Home() {
-  const { sheetId, loading: tenantLoading, error: tenantError } = useTenant()
+  const { sheetId, loading: tenantLoading, error: tenantError, retry: retryTenant } = useTenant()
   const [data, setData] = useState<ViolationsData | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'current' | 'resolved'>('current')
   const [showTicketForm, setShowTicketForm] = useState(false)
   const [showInviteForm, setShowInviteForm] = useState(false)
 
   useEffect(() => {
-    if (sheetId) {
+    if (sheetId && !tenantLoading) {
       setLoading(true)
+      setError(null)
       fetchViolations(sheetId)
         .then(setData)
-        .catch(err => setError(err.message))
+        .catch(err => {
+          const message = err instanceof Error ? err.message : 'Failed to load violations'
+          setError(message)
+          console.error('Error fetching violations:', err)
+        })
         .finally(() => setLoading(false))
     }
-  }, [sheetId])
+  }, [sheetId, tenantLoading])
 
-  if (tenantLoading || loading) {
+  if (tenantLoading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-white text-lg">Loading violations...</div>
+      <div className="min-h-screen bg-[#0f1419] flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-white text-lg mb-2">Loading tenant configuration...</div>
+          <div className="text-gray-400 text-sm">Please wait</div>
+        </div>
       </div>
     )
   }
 
-  if (tenantError || error) {
+  if (tenantError) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#0f1419] flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
+          <div className="text-red-500 text-xl font-bold mb-2">Tenant Configuration Error</div>
+          <div className="text-gray-400 mb-4">{tenantError}</div>
+          <button
+            onClick={retryTenant}
+            className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (!sheetId) {
+    return (
+      <div className="min-h-screen bg-[#0f1419] flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="text-red-500 text-xl font-bold mb-2">Error Loading Data</div>
-          <div className="text-gray-400">{tenantError || error}</div>
+          <div className="text-yellow-500 text-xl font-bold mb-2">No Configuration Found</div>
+          <div className="text-gray-400">Unable to determine client configuration</div>
+        </div>
+      </div>
+    )
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0f1419] flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-white text-lg mb-2">Loading violations...</div>
+          <div className="text-gray-400 text-sm">Fetching data from Google Sheets</div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#0f1419] flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
+          <div className="text-red-500 text-xl font-bold mb-2">Error Loading Violations</div>
+          <div className="text-gray-400 mb-4">{error}</div>
+          <button
+            onClick={() => sheetId && fetchViolations(sheetId).then(setData).catch(err => setError(err.message))}
+            className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg transition-colors"
+          >
+            Retry
+          </button>
         </div>
       </div>
     )

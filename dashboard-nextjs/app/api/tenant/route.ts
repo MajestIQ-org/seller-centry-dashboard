@@ -1,8 +1,22 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 
-export async function GET(request: NextRequest) {
+interface ClientMapping {
+  sheetId: string
+  subdomain: string
+}
+
+export async function GET() {
   try {
+    // Check environment variables
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      console.error('Missing Supabase environment variables')
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 }
+      )
+    }
+
     const headersList = await headers()
     const subdomain = headersList.get('x-tenant-subdomain')
 
@@ -28,20 +42,32 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('get-client error:', errorText)
-      throw new Error('Failed to fetch client mapping')
+      console.error('get-client error:', response.status, errorText)
+      return NextResponse.json(
+        { error: `Client not found for subdomain: ${subdomain}` },
+        { status: 404 }
+      )
     }
 
-    const data = await response.json()
+    const data = await response.json() as { sheetId: string }
 
-    return NextResponse.json({
+    if (!data.sheetId) {
+      return NextResponse.json(
+        { error: 'Invalid client configuration' },
+        { status: 500 }
+      )
+    }
+
+    const result: ClientMapping = {
       sheetId: data.sheetId,
       subdomain: subdomain,
-    })
+    }
+
+    return NextResponse.json(result)
   } catch (error) {
     console.error('Error fetching tenant:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch tenant data' },
+      { error: 'Failed to fetch tenant data', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }

@@ -1,8 +1,4 @@
-interface Violation {
-  id: string
-  atRiskSales: number
-  [key: string]: any
-}
+import { type Violation } from './ViolationsList'
 
 interface Props {
   violations: Violation[]

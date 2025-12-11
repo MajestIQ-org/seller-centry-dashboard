@@ -1,15 +1,14 @@
 'use client'
 
-interface Violation {
+export interface Violation {
   id: string
   product: string
   asin: string
   issueType: string
   atRiskSales: number
-  impact: string
+  impact: 'High' | 'Medium' | 'Low'
   status: string
   opened: string
-  [key: string]: any
 }
 
 interface Props {
