@@ -78,17 +78,21 @@ serve(async (req) => {
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
-  } catch (error: any) {
+  } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorCode =
+      typeof error === 'object' && error && 'code' in error
+        ? (error as { code?: unknown }).code
+        : undefined
     
-    if (error.code === 404) {
+    if (errorCode === 404) {
       return new Response(
         JSON.stringify({ error: 'Client mapping sheet not found or not accessible' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
     
-    if (error.code === 403) {
+    if (errorCode === 403) {
       return new Response(
         JSON.stringify({ error: 'Permission denied. Please share the mapping sheet with: ' + serviceAccount.client_email }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

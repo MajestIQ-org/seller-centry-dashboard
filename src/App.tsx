@@ -1,12 +1,12 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import { AuthProvider } from '@/contexts/AuthContext'
-import { TenantProvider } from '@/contexts/TenantContext'
-import { ProtectedRoute } from '@/components/ProtectedRoute'
-import { Login } from '@/pages/Login'
-import { Signup } from '@/pages/Signup'
-import { Dashboard } from '@/pages/Dashboard'
-import { AuthCallback } from '@/pages/AuthCallback'
-import { ResetPassword } from '@/pages/ResetPassword'
+import { AuthProvider } from '@src/contexts/AuthContext'
+import { TenantProvider } from '@src/contexts/TenantContext'
+import { ProtectedRoute } from '@src/components/ProtectedRoute'
+import { Login } from '@src/pages/Login'
+import { Signup } from '@src/pages/Signup'
+import { Dashboard } from '@src/pages/Dashboard'
+import { AuthCallback } from '@src/pages/AuthCallback'
+import { ResetPassword } from '@src/pages/ResetPassword'
 
 export default function App() {
   return (

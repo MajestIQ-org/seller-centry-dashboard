@@ -29,7 +29,10 @@ const localStorageMock = {
   removeItem: vi.fn(),
   clear: vi.fn(),
 }
-;(globalThis as any).localStorage = localStorageMock
+Object.defineProperty(globalThis, 'localStorage', {
+  value: localStorageMock as unknown as Storage,
+  writable: true,
+})
 
 // Set test subdomain
 localStorageMock.getItem.mockImplementation((key: string) => {

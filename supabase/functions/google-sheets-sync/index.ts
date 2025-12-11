@@ -50,15 +50,20 @@ serve(async (req) => {
           range: 'All Resolved Violations!A2:N',
         }),
       ])
-    } catch (sheetsError: any) {
-      if (sheetsError.code === 404) {
+    } catch (sheetsError: unknown) {
+      const errorCode =
+        typeof sheetsError === 'object' && sheetsError && 'code' in sheetsError
+          ? (sheetsError as { code?: unknown }).code
+          : undefined
+
+      if (errorCode === 404) {
         return new Response(
           JSON.stringify({ error: 'Spreadsheet not found or not accessible. Please ensure the sheet is shared with the service account.' }),
           { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
       
-      if (sheetsError.code === 403) {
+      if (errorCode === 403) {
         return new Response(
           JSON.stringify({ error: 'Permission denied. Please share the spreadsheet with: ' + serviceAccount.client_email }),
           { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

@@ -1,8 +1,8 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Navigate } from 'react-router-dom'
-import { useAuth } from '@/contexts/AuthContext'
-import { useTenant } from '@/contexts/TenantContext'
-import { verifyTenantAccess } from '@/services/tenantAccess'
+import { useAuth } from '@src/contexts/AuthContext'
+import { useTenant } from '@src/contexts/TenantContext'
+import { verifyTenantAccess } from '@src/services/tenantAccess'
 
 export function ProtectedRoute({ children }: { children: ReactNode }) {
   const { user, loading: authLoading } = useAuth()
@@ -52,7 +52,7 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
       <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
         <div className="text-white text-center">
           <h1 className="text-2xl font-bold mb-2">Access Denied</h1>
-          <p className="text-gray-400">You don't have permission to access this account</p>
+          <p className="text-gray-400">You don&apos;t have permission to access this account</p>
         </div>
       </div>
     )

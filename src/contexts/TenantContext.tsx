@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import { useSubdomain } from '@/hooks/useSubdomain'
-import { getClientBySubdomain, type ClientMapping } from '@/services/clientMapping'
+import { useSubdomain } from '@src/hooks/useSubdomain'
+import { getClientBySubdomain, type ClientMapping } from '@src/services/clientMapping'
 
 interface TenantContextType {
   tenant: ClientMapping | null

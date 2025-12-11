@@ -1,7 +1,7 @@
 import { useState, useEffect, type FormEvent } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { supabase } from '@/lib/supabase'
-import { useAuth } from '@/contexts/AuthContext'
+import { supabase } from '@src/lib/supabase'
+import { useAuth } from '@src/contexts/AuthContext'
 
 interface InviteData {
   email: string

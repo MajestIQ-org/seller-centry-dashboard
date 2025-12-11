@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
-import { supabase } from '@/lib/supabase'
-import { useAuth } from '@/contexts/AuthContext'
-import { useTenant } from '@/contexts/TenantContext'
+import { supabase } from '@src/lib/supabase'
+import { useAuth } from '@src/contexts/AuthContext'
+import { useTenant } from '@src/contexts/TenantContext'
 
 interface SubmitTicketProps {
   onClose: () => void
@@ -53,7 +53,7 @@ export function SubmitTicket({ onClose }: SubmitTicketProps) {
           <div className="text-center">
             <div className="text-green-500 text-5xl mb-4">✓</div>
             <h3 className="text-xl font-bold text-white mb-2">Ticket Submitted</h3>
-            <p className="text-gray-400">We'll get back to you soon!</p>
+            <p className="text-gray-400">We&apos;ll get back to you soon!</p>
           </div>
         </div>
       </div>

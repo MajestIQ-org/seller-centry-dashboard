@@ -1,4 +1,4 @@
-import type { Violation } from '@/services/violations'
+import type { Violation } from '@src/services/violations'
 
 interface Props {
   violation: Violation

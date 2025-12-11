@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
-import { supabase } from '@/lib/supabase'
-import { useTenant } from '@/contexts/TenantContext'
+import { supabase } from '@src/lib/supabase'
+import { useTenant } from '@src/contexts/TenantContext'
 
 interface InviteUserProps {
   onClose: () => void

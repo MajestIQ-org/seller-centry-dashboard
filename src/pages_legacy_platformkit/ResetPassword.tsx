@@ -1,6 +1,6 @@
 import { useState, useEffect, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@src/lib/supabase'
 
 export function ResetPassword() {
   const [password, setPassword] = useState('')

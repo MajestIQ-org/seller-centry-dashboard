@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import type { Violation } from '@/services/violations'
+import type { Violation } from '@src/services/violations'
 import { ViolationDetailModal } from './ViolationDetailModal'
 
 interface Props {
@@ -41,10 +41,10 @@ export function ViolationsList({ violations }: Props) {
           <p className="text-gray-500 text-sm">0 issues found</p>
         </div>
         <div className="flex gap-4 mb-6">
-          <select className="bg-[#151a24] border border-gray-700 text-gray-300 px-4 py-2.5 rounded-lg text-sm focus:outline-none focus:border-gray-600">
+          <select aria-label="Time range" title="Time range" className="bg-[#151a24] border border-gray-700 text-gray-300 px-4 py-2.5 rounded-lg text-sm focus:outline-none focus:border-gray-600">
             <option>All Time</option>
           </select>
-          <select className="bg-[#151a24] border border-gray-700 text-gray-300 px-4 py-2.5 rounded-lg text-sm focus:outline-none focus:border-gray-600">
+          <select aria-label="Status" title="Status" className="bg-[#151a24] border border-gray-700 text-gray-300 px-4 py-2.5 rounded-lg text-sm focus:outline-none focus:border-gray-600">
             <option>All Statuses</option>
           </select>
           <div className="flex-1 relative">
@@ -102,8 +102,7 @@ export function ViolationsList({ violations }: Props) {
 
               <button
                 onClick={() => setSelectedViolation(violation)}
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-3 rounded-lg transition-colors"
-                style={{ minHeight: '48px' }}
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-3 rounded-lg transition-colors min-h-[48px]"
               >
                 View Details
               </button>
@@ -140,9 +139,12 @@ export function ViolationsList({ violations }: Props) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
-            <button className="flex items-center gap-2 bg-[#151a24] border border-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm hover:border-gray-600">
+            <button type="button" className="flex items-center gap-2 bg-[#151a24] border border-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm hover:border-gray-600">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z\" />\n              </svg>\n              All Statuses\n            </button>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              </svg>
+              All Statuses
+            </button>
           </div>
         </div>
         <div className="overflow-x-auto">

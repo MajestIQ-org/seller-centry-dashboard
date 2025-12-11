@@ -12,7 +12,19 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+
+    // Project-specific generated outputs:
+    "dist/**",
+    "playwright-report/**",
+    "test-results/**",
   ]),
+
+  // The react-hooks rule `set-state-in-effect` is too aggressive for common async flows.
+  {
+    rules: {
+      "react-hooks/set-state-in-effect": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;
