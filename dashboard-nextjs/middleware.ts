@@ -12,11 +12,11 @@ export function middleware(request: NextRequest) {
     if (parts.length >= 2 && parts[0] !== 'localhost') {
       subdomain = parts[0]
     } else {
-      subdomain = 'example' // default for testing
+      subdomain = 'test' // test subdomain in Google Sheet
     }
   } else if (hostname.includes('vercel.app')) {
     // Vercel preview deployments - extract from URL or use default
-    subdomain = 'example'
+    subdomain = 'test'
   } else if (parts.length >= 3) {
     // Production: example.sellercentry.com
     subdomain = parts[0]

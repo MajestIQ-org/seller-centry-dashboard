@@ -8,15 +8,6 @@ interface ClientMapping {
 
 export async function GET() {
   try {
-    // Check environment variables
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      console.error('Missing Supabase environment variables')
-      return NextResponse.json(
-        { error: 'Server configuration error' },
-        { status: 500 }
-      )
-    }
-
     const headersList = await headers()
     const subdomain = headersList.get('x-tenant-subdomain')
 
@@ -27,14 +18,39 @@ export async function GET() {
       )
     }
 
+    // For local development, return mock data
+    const hostname = headersList.get('host') || ''
+    if (hostname.includes('localhost') || hostname.includes('127.0.0.1')) {
+      console.log('Using mock data for localhost, subdomain:', subdomain)
+      return NextResponse.json({
+        sheetId: 'https://docs.google.com/spreadsheets/d/1fJ5Qs_VwEr8oN3mP2xL9YzK4Aw6Bg8CjT7DuE1VsH2Ii/edit',
+        subdomain: subdomain,
+        storeName: subdomain
+      })
+    }
+
+    // Check environment variables - need SERVICE_ROLE_KEY for edge functions
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    
+    if (!supabaseUrl || !serviceRoleKey) {
+      console.error('Missing Supabase environment variables')
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 }
+      )
+    }
+
+    console.log('Fetching client for subdomain:', subdomain)
+
     // Call Supabase Edge Function to get client mapping
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/get-client`,
+      `${supabaseUrl}/functions/v1/get-client`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+          Authorization: `Bearer ${serviceRoleKey}`,
         },
         body: JSON.stringify({ subdomain }),
       }
