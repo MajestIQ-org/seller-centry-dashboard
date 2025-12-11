@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(if not exist \"d:\\dashboard_test-claude-seller-dashboard-implementation-01CjjHuhRuSAf8ZfqY61X6L6\\supabase\\functions\\get-client\" mkdir \"d:\\dashboard_test-claude-seller-dashboard-implementation-01CjjHuhRuSAf8ZfqY61X6L6\\supabase\\functions\\get-client\")",
+      "Bash(if not exist \"d:\\dashboard_test-claude-seller-dashboard-implementation-01CjjHuhRuSAf8ZfqY61X6L6\\supabase\\functions\\submit-ticket\" mkdir \"d:\\dashboard_test-claude-seller-dashboard-implementation-01CjjHuhRuSAf8ZfqY61X6L6\\supabase\\functions\\submit-ticket\")"
+    ]
+  }
+}

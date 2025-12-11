@@ -1,0 +1,234 @@
+Content is user-generated and unverified.
+4
+Seller Centry Dashboard - Developer Handoff Document
+Developer: Andrii Ihnatiuk
+Project Start: Tuesday, December 10, 2024
+
+⚠️ CRITICAL: Mobile-First Design
+90% of users will access this dashboard on mobile devices. Every feature, every screen, every interaction must be designed and tested for mobile FIRST. Desktop is secondary.
+
+Touch targets minimum 44px
+No horizontal scrolling ever
+Cards instead of tables on mobile
+Test everything on mobile viewport before desktop
+Project Overview
+What We Are Building
+A multi-tenant dashboard for Amazon sellers to view their account health violations. Each client gets their own subdomain (example: clientname.sellercentry.com) that displays their specific violation data from their Google Sheet.
+
+Architecture
+Client visits subdomain (client1.sellercentry.com)
+           ↓
+    Vercel detects subdomain
+           ↓
+    Looks up client's Google Sheet ID
+           ↓
+    Supabase Edge Function fetches data from Google Sheets
+           ↓
+    React frontend displays violations
+What Already Exists
+✅ React dashboard UI (built in Lovable, needs refinement)
+✅ Google Sheets data structure with mock data
+✅ Supabase project with edge functions configured
+✅ GitHub repository with code
+✅ Service account credentials for Google Sheets API
+What You Will Build
+Connect the dashboard to Google Sheets API (read violation data)
+Multi-tenant subdomain routing (each client → their own sheet)
+Login authentication using Supabase Auth (email/password AND Google login)
+Submit ticket functionality (sends email)
+Access & Credentials
+GitHub Repository
+URL: https://github.com/MajestIQ-org/seller-centry-dashboard
+Access: You have been added to MajestIQ-org organization
+Branch: Work on main or create feature branches
+Vercel
+Access: You have been added to the Vercel team
+Domain: sellercentry.com (DNS managed in GoDaddy)
+Note: Project not yet deployed to Vercel - you will set this up
+Supabase Project
+Project ID: byaaliobjjdffkhnxytv
+Supabase URL: https://byaaliobjjdffkhnxytv.supabase.co
+Dashboard: https://supabase.com/dashboard/project/byaaliobjjdffkhnxytv
+Edge Functions Already Created
+Function Name	Purpose
+google-sheets-sync	Fetches violation data from Google Sheets
+account-health-agent	Additional function (may not be needed)
+Secrets Already Configured in Supabase
+SUPABASE_URL
+SUPABASE_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY
+SUPABASE_DB_URL
+SUPABASE_PUBLISHABLE_KEY
+OPENAI_API_KEY
+GOOGLE_SERVICE_ACCOUNT_KEY
+Google Sheets API
+Service Account Email
+tools-377@tools-389920.iam.gserviceaccount.com
+Important: All Google Sheets must be shared with this service account email (Viewer access) for the API to read them.
+
+Service Account JSON Key
+I will send you the JSON key file separately via Upwork message.
+
+Google Sheets Structure
+Working Template Sheet (Example Data)
+URL: https://docs.google.com/spreadsheets/d/1vlw9UCz1SOdvjhzAHygQGKPbonHf_kZvmbfA_nvlSl8/edit?gid=901198628#gid=901198628
+
+This sheet contains mock violation data. The dashboard currently reads from this sheet.
+
+Apps Scripts Already in Template
+The template sheet has Google Apps Scripts that:
+
+Auto-generate Violation IDs — Creates unique 12-character hash IDs when violations are added
+Auto-move rows by status — When status changes to "Resolved", "Ignored", or "Acknowledged", the row automatically moves from "All Current Violations" tab to "All Resolved Violations" tab
+Auto-populate Date Resolved — When a violation is moved to resolved, the date is automatically added
+⚠️ Note About Client Sheets
+We will be adding more Apps Script functionality to the template tomorrow (Tuesday) during the day EST. Once the template is finalized, we will create individual sheets for each client with all proper scripts. The client mapping sheet (below) will be updated with links to each client's sheet.
+
+Tab: "All Current Violations"
+Column	Field Name	Description
+A	Violation ID	Auto-generated unique ID (12 character hash)
+B	ImportedAt	Date the violation was imported
+C	Reason	Type of violation (e.g., "Product Authenticity Complaints")
+D	Date	When Amazon flagged the violation
+E	ASIN	Amazon product identifier
+F	Product Title	Full product name
+G	At Risk Sales	Dollar amount at risk (number)
+H	Action Taken	What Amazon did (e.g., "Listing removed")
+I	AHR Impact	Account Health Rating impact (High/Low/No impact)
+J	Next Steps	Required action
+K	Options	Available options
+L	Status	Current status (Working, Waiting on Client, Submitted, Denied, Ignored)
+M	Notes	Internal notes for client
+Tab: "All Resolved Violations"
+Same columns as above, plus:
+
+Column	Field Name	Description
+N	Date Resolved	When the violation was resolved (auto-populated)
+Client Mapping Sheet
+URL: https://docs.google.com/spreadsheets/d/1p-J1x9B6UlaUNkULjx8YMXRpqKVaD1vRnkOjYTD1qMc/edit?gid=1953303085#gid=1953303085
+
+This sheet maps clients to their individual Google Sheets.
+
+Column	Field Name	Description
+A	StoreName	Client's Amazon store name (used for subdomain)
+B	MerchantId	Amazon Merchant ID
+C	Email	Client's email address
+D	Link to Sheet	URL to client's individual Google Sheet
+How Subdomain Routing Should Work
+User visits alwayz-on-sale.sellercentry.com
+System looks up "alwayz-on-sale" in Column A of mapping sheet
+Gets the Google Sheet URL from Column D
+Fetches violation data from that specific sheet
+Displays data in dashboard
+Dashboard Preview
+Current Live Preview
+URL: https://preview--seller-centry-dashboard.lovable.app/
+
+Features Implemented
+✅ Active Violations / Resolved Violations toggle
+✅ Summary cards (Open Violations count, At-Risk Sales total)
+✅ Violation table with filtering (time range, status, search)
+✅ Violation detail modal (click "View" to see full details)
+✅ "Needs Attention" banner (shows violations with notes)
+✅ Mobile-responsive design (cards on mobile, table on desktop)
+✅ Dark theme
+Features NOT Yet Implemented
+❌ Real data connection (currently using mock data)
+❌ Multi-tenant subdomain routing
+❌ User authentication (login)
+❌ PDF export functionality
+❌ Submit ticket form (UI exists, not functional)
+Authentication Requirements
+Use Supabase Auth
+Login Options (both required)
+Email/password login
+Google login (Sign in with Google button)
+Password Recovery
+"Forgot password" link on login page
+Sends password reset email via Supabase Auth
+User Flow
+Client visits their subdomain: clientname.sellercentry.com
+If not logged in → show login page
+Client logs in with email/password OR Google
+On successful login → show dashboard with their violations
+Logout returns to login page
+Tenant Isolation
+Each user is tied to their subdomain/tenant. When user logs in at client1.sellercentry.com, they only see client1's data.
+
+Initial Setup
+For this first version, you can manually create test users in Supabase Auth dashboard. We will add self-registration later if needed.
+
+Submit Ticket Functionality
+Requirements
+When a user submits a ticket through the dashboard:
+
+Collect from form:
+Subject (dropdown: Question, Document Request, Status Update, Other)
+Message (text area)
+Related ASIN (optional)
+Include automatically:
+Client name (from subdomain)
+User email (from auth)
+Timestamp
+Send email to all three addresses:
+info@sellercentry.com
+joe@sellercentry.com
+kristen@sellercentry.com
+Show success confirmation to user
+Implementation
+You can use Supabase Edge Functions with a service like Resend, SendGrid, or Supabase's built-in email. Choose whichever is simplest.
+
+Domain & Subdomain Setup
+Primary Domain
+Domain: sellercentry.com
+Registrar: GoDaddy
+DNS Access: Joe has access
+Subdomain Strategy
+Using Vercel's wildcard subdomain feature:
+
+*.sellercentry.com → points to Vercel
+Each client gets: clientname.sellercentry.com
+DNS Configuration
+We will configure DNS together once you're ready to deploy. Required:
+
+Add Vercel DNS records to GoDaddy
+Configure wildcard subdomain in Vercel project settings
+Note
+The main website (sellercentry.com) is being built separately this week. The dashboard subdomains should not conflict with the main site.
+
+Your Tasks (Priority Order)
+Task 1: Google Sheets Data Connection
+Verify edge function google-sheets-sync is working
+Connect React frontend to fetch real data from Google Sheets
+Display actual violation data instead of mock data
+Test with the working template sheet
+Task 2: Multi-Tenant Subdomain Routing
+Implement subdomain detection in the app
+Look up subdomain in client mapping sheet
+Fetch correct client's Google Sheet based on subdomain
+Reference: Vercel Platforms Starter Kit
+Task 3: Supabase Authentication
+Set up Supabase Auth with two login options:
+Email/password
+Google OAuth (Sign in with Google)
+Add "Forgot password" functionality
+Create login page
+Protect dashboard routes (must be logged in to view)
+Tie users to their subdomain/tenant
+Task 4: Submit Ticket Email
+Make the Submit Ticket form functional
+Send form submissions to: info@sellercentry.com, joe@sellercentry.com, kristen@sellercentry.com
+Include client name, user email, and timestamp
+Task 5: Deploy to Vercel
+Connect GitHub repo to Vercel
+Configure environment variables
+Set up wildcard subdomain
+Test with one client subdomain
+Files I Will Send Separately
+
+Google Service Account JSON key - Required for Sheets API authentication. Will send via Upwork message.
+
+це був перший файл з описом технічного завдання.
+ 
+також до файлу ще є відповіді на мої запитання, вони ось:
+Just sent you invite to resend account just created Just sent Supabase invite as well Google Auth OAuth: Should I create the OAuth credentials and send them? Or should I add you to the Google Cloud project? Whichever you prefer.     For resend: The sending domain is __sellercentry.com__ — let me know what DNS records I need to add to verify it. I have full access to domain DNS.    DNS wildcard: I can add DNS records anytime. Message me when you're ready to deploy and tell me exactly what records to add. I have GoDaddy access. Auth tenants: Yes, enforce tenant security properly. Users must be bound to specific tenants in the database. When a user logs in, verify they're authorized for that subdomain. If someone tries to access a subdomain they're not assigned to, deny access. Important: One user can be authorized for multiple subdomains — some clients have multiple accounts with us. Client mapping sheet:  Done — all client sheets are linked: ____https://docs.google.com/spreadsheets/d/1p-J1x9B6UlaUNkULjx8YMXRpqKVaD1vRnkOjYTD1qMc/edit?gid=1953303085#gid=1953303085____  Important notes: MerchantId (Column B is the unique identifier for each account StoreName (Column A) is the display name / subdomain Email (Column C) is billing contact only — NOT their login email Each client sheet is linked in Column D One user can be authorized for multiple subdomains — some clients have multiple accounts with us.  For linking users to tenants: Build an invite system. A flow like this would be best if you agree:  - I generate a unique invite link tied to one or more merchant_id(s)  - I send the link to the client  - Client clicks the link and signs up with their preferred email/password or Google  - System automatically creates their account and links it to their tenant(s)  - Invite token is marked as used so it can't be reused For testing, manually create these accounts in Supabase Auth and link them to the EXAMPLE merchant in the mapping sheet:  - joe@sellercentry.com - kristen@sellercentry.com Yes — ignore PDF export and account-health-agent function for now. the account health agent isn't being used. The PDF export feature is currently working, but needs to be refined. I'll try to do that from my end. Focus on: data connection, subdomain routing, auth (email + Google + forgot password), submit ticket emails, and the invite system for onboarding. 
