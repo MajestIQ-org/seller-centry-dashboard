@@ -58,6 +58,9 @@ serve(async (req) => {
         valid: true,
         email: invite.email,
         merchantId: invite.merchant_id,
+        merchantIds: Array.isArray(invite.merchant_ids) && invite.merchant_ids.length > 0
+          ? invite.merchant_ids
+          : [invite.merchant_id],
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )

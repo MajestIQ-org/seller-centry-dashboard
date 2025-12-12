@@ -5,6 +5,8 @@ import { createContext, useContext, useEffect, useState, useCallback } from 'rea
 interface TenantContextType {
   sheetId: string | null
   subdomain: string | null
+  merchantId: string | null
+  storeName: string | null
   loading: boolean
   error: string | null
   retry: () => void
@@ -13,6 +15,8 @@ interface TenantContextType {
 interface TenantApiResponse {
   sheetId: string
   subdomain: string
+  merchantId?: string
+  storeName?: string
 }
 
 const TenantContext = createContext<TenantContextType | undefined>(undefined)
@@ -21,6 +25,8 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   const [tenant, setTenant] = useState<Omit<TenantContextType, 'retry'>>({
     sheetId: null,
     subdomain: null,
+    merchantId: null,
+    storeName: null,
     loading: true,
     error: null,
   })
@@ -47,6 +53,8 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       setTenant({
         sheetId: data.sheetId,
         subdomain: data.subdomain,
+        merchantId: data.merchantId ?? null,
+        storeName: data.storeName ?? null,
         loading: false,
         error: null,
       })
@@ -55,6 +63,8 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       setTenant({
         sheetId: null,
         subdomain: null,
+        merchantId: null,
+        storeName: null,
         loading: false,
         error: error instanceof Error ? error.message : 'Unknown error',
       })

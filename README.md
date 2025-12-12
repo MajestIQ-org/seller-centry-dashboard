@@ -103,6 +103,9 @@ Required:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
+Recommended (production, for subdomain SSO):
+- `NEXT_PUBLIC_COOKIE_DOMAIN` (example: `.sellercentry.com`)
+
 ## Client Mapping
 
 Clients are mapped in Google Sheet (ID: `1ASxjV1Cb0W5exhYBi_D3hE3chUU2eUMGdR6ZDKmF_hY`):

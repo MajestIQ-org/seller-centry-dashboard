@@ -24,11 +24,21 @@ serve(async (req) => {
   }
 
   try {
-    const { email, merchantId, expiresInDays = 7 } = await req.json()
+    const { email, merchantId, merchantIds, expiresInDays = 7 } = await req.json()
 
-    if (!email || !merchantId) {
+    const requestedMerchantIds: string[] = Array.isArray(merchantIds)
+      ? merchantIds
+      : typeof merchantId === 'string' && merchantId
+        ? [merchantId]
+        : []
+
+    const uniqueMerchantIds = Array.from(
+      new Set(requestedMerchantIds.map((m) => String(m).trim()).filter(Boolean))
+    )
+
+    if (!email || uniqueMerchantIds.length === 0) {
       return new Response(
-        JSON.stringify({ error: 'Email and merchantId are required' }),
+        JSON.stringify({ error: 'Email and merchantId(s) are required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -55,6 +65,29 @@ serve(async (req) => {
       )
     }
 
+    // Verify the inviter has access to all requested merchant_ids
+    const { data: tenantRows, error: tenantError } = await supabase
+      .from('user_tenants')
+      .select('merchant_id')
+      .eq('user_id', user.id)
+      .in('merchant_id', uniqueMerchantIds)
+
+    if (tenantError) {
+      return new Response(
+        JSON.stringify({ error: 'Failed to verify tenant access' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const allowedMerchantIds = new Set((tenantRows || []).map((r: any) => String(r.merchant_id)))
+    const missing = uniqueMerchantIds.filter((m) => !allowedMerchantIds.has(m))
+    if (missing.length > 0) {
+      return new Response(
+        JSON.stringify({ error: 'You are not authorized to invite users to one or more accounts' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     const inviteToken = generateToken()
     const expiresAt = new Date()
     expiresAt.setDate(expiresAt.getDate() + expiresInDays)
@@ -64,7 +97,8 @@ serve(async (req) => {
       .insert({
         email,
         token: inviteToken,
-        merchant_id: merchantId,
+        merchant_id: uniqueMerchantIds[0],
+        merchant_ids: uniqueMerchantIds,
         invited_by: user.id,
         expires_at: expiresAt.toISOString(),
       })

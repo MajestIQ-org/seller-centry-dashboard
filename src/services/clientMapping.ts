@@ -2,9 +2,8 @@ import { supabase } from '@src/lib/supabase'
 
 export interface ClientMapping {
   storeName: string
+  subdomain: string
   merchantId: string
-  email: string
-  sheetUrl: string
   sheetId: string
 }
 
@@ -21,9 +20,8 @@ export async function getClientBySubdomain(subdomain: string): Promise<ClientMap
 
     return {
       storeName: data.storeName,
+      subdomain: data.subdomain,
       merchantId: data.merchantId,
-      email: data.email,
-      sheetUrl: data.sheetUrl,
       sheetId: data.sheetId
     }
   } catch (error) {

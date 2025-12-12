@@ -29,7 +29,7 @@ export function SummaryCards({ violations }: Props) {
         <div className="flex items-center justify-between">
           <div>
             <div className="text-gray-400 text-xs uppercase tracking-wide mb-2">At-Risk Sales</div>
-            <div className="text-5xl font-bold text-white mb-2">${totalSales}</div>
+            <div className="text-5xl font-bold text-white mb-2">${totalSales.toLocaleString()}</div>
             <div className="text-gray-400 text-sm">Potential revenue impact</div>
           </div>
           <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center">

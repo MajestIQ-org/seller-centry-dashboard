@@ -1,16 +1,22 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 
 export interface Violation {
-  id: string
-  product: string
+  violationId: string
+  productTitle: string
   asin: string
-  issueType: string
+  reason: string
   atRiskSales: number
-  impact: 'High' | 'Medium' | 'Low'
+  ahrImpact: string
   status: string
-  opened: string
+  date: string
+  importedAt: string
+  actionTaken: string
+  nextSteps: string
+  options: string
+  notes: string
+  dateResolved?: string
 }
 
 interface Props {
@@ -21,17 +27,51 @@ export function ViolationsList({ violations }: Props) {
   const [searchQuery, setSearchQuery] = useState('')
   const [timeFilter, setTimeFilter] = useState('All Time')
   const [statusFilter, setStatusFilter] = useState('All Statuses')
+  const [selectedViolation, setSelectedViolation] = useState<Violation | null>(null)
+  const [showNeedsAttentionOnly, setShowNeedsAttentionOnly] = useState(false)
 
-  if (violations.length === 0) {
-    return (
-      <div className="bg-[#1a1f2e] rounded-lg p-8">
-        <div className="text-center py-12">
-          <p className="text-gray-400 text-lg">No issues found</p>
-          <p className="text-gray-500 text-sm mt-2">Try adjusting your search or filter settings.</p>
-        </div>
-      </div>
-    )
-  }
+  const needsAttentionViolations = useMemo(() => {
+    return violations.filter((violation) => violation.notes && violation.notes.trim().length > 0)
+  }, [violations])
+
+  const filteredViolations = useMemo(() => {
+    const baseViolations = showNeedsAttentionOnly ? needsAttentionViolations : violations
+    const normalizedQuery = searchQuery.trim().toLowerCase()
+    const now = new Date()
+
+    const daysBack =
+      timeFilter === 'Last 7 days'
+        ? 7
+        : timeFilter === 'Last 30 days'
+          ? 30
+          : timeFilter === 'Last 90 days'
+            ? 90
+            : null
+
+    const cutoff = daysBack ? new Date(now.getTime() - daysBack * 24 * 60 * 60 * 1000) : null
+
+    return baseViolations.filter((violation) => {
+      const matchesStatus =
+        statusFilter === 'All Statuses' ? true : violation.status === statusFilter
+
+      const matchesSearch =
+        normalizedQuery.length === 0
+          ? true
+          : [violation.asin, violation.productTitle, violation.reason]
+              .filter(Boolean)
+              .some((value) => value.toLowerCase().includes(normalizedQuery))
+
+      let matchesTime = true
+      if (cutoff) {
+        const parsed = Date.parse(violation.date)
+        if (!Number.isNaN(parsed)) {
+          matchesTime = new Date(parsed) >= cutoff
+        }
+      }
+
+      return matchesStatus && matchesSearch && matchesTime
+    })
+  }, [needsAttentionViolations, searchQuery, showNeedsAttentionOnly, statusFilter, timeFilter, violations])
 
   return (
     <div className="space-y-4">
@@ -44,18 +84,17 @@ export function ViolationsList({ violations }: Props) {
               placeholder="Search by ASIN, Product, or Issue Type..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-[#1a1f2e] border border-gray-700 rounded-lg px-4 py-2.5 pl-10 text-white placeholder-gray-500 focus:outline-none focus:border-orange-500"
+              className="w-full bg-[#1a1f2e] border border-gray-700 rounded-lg px-4 py-3 pl-10 text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 min-h-[48px]"
             />
             <svg className="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-600 border border-gray-700 px-1.5 py-0.5 rounded">⌘ K</span>
           </div>
         </div>
         <select
           value={timeFilter}
           onChange={(e) => setTimeFilter(e.target.value)}
-          className="bg-[#1a1f2e] border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-orange-500"
+          className="bg-[#1a1f2e] border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-orange-500 min-h-[48px]"
           aria-label="Time filter"
         >
           <option>All Time</option>
@@ -66,7 +105,7 @@ export function ViolationsList({ violations }: Props) {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="bg-[#1a1f2e] border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-orange-500"
+          className="bg-[#1a1f2e] border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-orange-500 min-h-[48px]"
           aria-label="Status filter"
         >
           <option>All Statuses</option>
@@ -74,106 +113,275 @@ export function ViolationsList({ violations }: Props) {
           <option>Waiting on Client</option>
           <option>Submitted</option>
           <option>Denied</option>
+          <option>Ignored</option>
+          <option>Acknowledged</option>
+          <option>Resolved</option>
         </select>
       </div>
 
-      {/* Table Section */}
-      <div className="bg-[#1a1f2e] rounded-lg overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-800">
-          <div className="flex items-center justify-between">
+      {/* Needs Attention */}
+      {needsAttentionViolations.length > 0 && (
+        <div className="bg-[#1a1f2e] rounded-lg border border-orange-500 px-6 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <h2 className="text-white font-semibold text-lg">Violation Tracker</h2>
-              <p className="text-gray-400 text-sm">{violations.length} issues found</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search ASIN or Product..."
-                  className="bg-[#0f1419] border border-gray-700 rounded-lg px-4 py-2 pl-9 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-orange-500 w-64"
-                />
-                <svg className="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
+              <div className="text-orange-500 font-semibold">Needs Attention</div>
+              <div className="text-gray-300 text-sm">
+                {needsAttentionViolations.length} violation{needsAttentionViolations.length === 1 ? '' : 's'} have notes
               </div>
-              <button className="p-2 hover:bg-gray-800 rounded-lg transition-colors" aria-label="Filter options">
-                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                </svg>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowNeedsAttentionOnly((prev) => !prev)}
+              className="bg-transparent border border-gray-700 hover:border-gray-600 text-white text-sm px-4 rounded-lg transition-colors min-h-[44px]"
+            >
+              {showNeedsAttentionOnly ? 'Show All' : 'Show Only'}
+            </button>
+          </div>
+
+          <div className="mt-4 space-y-2">
+            {needsAttentionViolations.slice(0, 3).map((violation) => (
+              <div key={violation.violationId} className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-white text-sm font-medium truncate">{violation.productTitle}</div>
+                  <div className="text-gray-400 text-xs truncate">{violation.asin}</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedViolation(violation)}
+                  className="text-orange-500 hover:text-orange-400 text-sm font-medium min-h-[44px]"
+                >
+                  View
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Results Header */}
+      <div className="bg-[#1a1f2e] rounded-lg px-6 py-4 border border-gray-800">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-white font-semibold text-lg">Violation Tracker</h2>
+            <p className="text-gray-400 text-sm">{filteredViolations.length} issues found</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile/Tablet: Cards */}
+      <div className="space-y-3 lg:hidden">
+        {filteredViolations.map((violation) => (
+          <div key={violation.violationId} className="bg-[#1a1f2e] rounded-lg border border-gray-800 p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-white font-semibold text-sm truncate">{violation.productTitle}</div>
+                <a
+                  href={`https://www.amazon.com/dp/${violation.asin}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-orange-500 hover:text-orange-400 text-xs"
+                  title="View on Amazon"
+                >
+                  {violation.asin}
+                </a>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSelectedViolation(violation)}
+                className="bg-transparent border border-gray-700 hover:border-gray-600 text-white text-sm px-4 rounded-lg transition-colors min-h-[44px]"
+              >
+                View
               </button>
-              <select className="bg-transparent border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-orange-500" aria-label="Filter by status">
-                <option>All Statuses</option>
-                <option>Working</option>
-                <option>Waiting on Client</option>
-                <option>Submitted</option>
-              </select>
+            </div>
+
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <div>
+                <div className="text-gray-400 text-xs uppercase tracking-wide">Issue</div>
+                <div className="text-gray-200 text-sm break-words">{violation.reason}</div>
+              </div>
+              <div>
+                <div className="text-gray-400 text-xs uppercase tracking-wide">Status</div>
+                <div className="text-gray-200 text-sm">{violation.status}</div>
+              </div>
+              <div>
+                <div className="text-gray-400 text-xs uppercase tracking-wide">At Risk</div>
+                <div className="text-white text-sm font-medium">${violation.atRiskSales.toLocaleString()}</div>
+              </div>
+              <div>
+                <div className="text-gray-400 text-xs uppercase tracking-wide">AHR Impact</div>
+                <div className="text-gray-200 text-sm">{violation.ahrImpact || '—'}</div>
+              </div>
+            </div>
+
+            <div className="mt-3 text-gray-400 text-sm">Date: {violation.date || '—'}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop: Table (no horizontal scroll) */}
+      <div className="hidden lg:block bg-[#1a1f2e] rounded-lg overflow-hidden border border-gray-800">
+        <table className="w-full table-fixed">
+          <thead className="bg-[#151a26]">
+            <tr>
+              <th className="text-left px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider w-[38%]">
+                Product
+              </th>
+              <th className="text-left px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider w-[22%]">
+                Issue Type
+              </th>
+              <th className="text-left px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider w-[12%]">
+                $ At Risk
+              </th>
+              <th className="text-left px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider w-[12%]">
+                Status
+              </th>
+              <th className="text-left px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider w-[10%]">
+                Date
+              </th>
+              <th className="text-left px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider w-[6%]">
+                Action
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-800">
+            {filteredViolations.map((violation) => (
+              <tr key={violation.violationId} className="hover:bg-[#1e2433] transition-colors">
+                <td className="px-6 py-4 align-top">
+                  <div className="text-white font-medium text-sm truncate">{violation.productTitle}</div>
+                  <a
+                    href={`https://www.amazon.com/dp/${violation.asin}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-orange-500 hover:text-orange-400 text-xs"
+                    title="View on Amazon"
+                  >
+                    {violation.asin}
+                  </a>
+                </td>
+                <td className="px-6 py-4 text-gray-300 text-sm truncate align-top">{violation.reason}</td>
+                <td className="px-6 py-4 text-white font-medium text-sm align-top">
+                  ${violation.atRiskSales.toLocaleString()}
+                </td>
+                <td className="px-6 py-4 align-top">
+                  <span className="px-2.5 py-1 rounded text-xs font-medium bg-gray-700 text-gray-300">
+                    {violation.status}
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-gray-400 text-sm truncate align-top">{violation.date || '—'}</td>
+                <td className="px-6 py-4 align-top">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedViolation(violation)}
+                    className="text-orange-500 hover:text-orange-400 text-sm font-medium min-h-[44px]"
+                  >
+                    View
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {filteredViolations.length === 0 && (
+        <div className="bg-[#1a1f2e] rounded-lg p-8 border border-gray-800">
+          <div className="text-center py-8">
+            <p className="text-gray-400 text-lg">No issues found</p>
+            <p className="text-gray-500 text-sm mt-2">Try adjusting your search or filter settings.</p>
+          </div>
+        </div>
+      )}
+
+      {/* View Modal */}
+      {selectedViolation && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-gray-800 rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-start justify-between gap-4 p-6 border-b border-gray-700">
+              <div className="min-w-0">
+                <h3 className="text-xl font-bold text-white truncate">{selectedViolation.productTitle}</h3>
+                <a
+                  href={`https://www.amazon.com/dp/${selectedViolation.asin}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-orange-500 hover:text-orange-400 text-sm"
+                >
+                  {selectedViolation.asin}
+                </a>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedViolation(null)}
+                className="text-gray-400 hover:text-white text-2xl min-h-[44px] min-w-[44px]"
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-gray-700/40 rounded-lg p-4">
+                <div className="text-gray-400 text-xs uppercase tracking-wide">Issue Type</div>
+                <div className="text-gray-100 text-sm mt-1">{selectedViolation.reason || '—'}</div>
+              </div>
+              <div className="bg-gray-700/40 rounded-lg p-4">
+                <div className="text-gray-400 text-xs uppercase tracking-wide">Status</div>
+                <div className="text-gray-100 text-sm mt-1">{selectedViolation.status || '—'}</div>
+              </div>
+              <div className="bg-gray-700/40 rounded-lg p-4">
+                <div className="text-gray-400 text-xs uppercase tracking-wide">At Risk Sales</div>
+                <div className="text-white font-medium text-sm mt-1">
+                  ${selectedViolation.atRiskSales.toLocaleString()}
+                </div>
+              </div>
+              <div className="bg-gray-700/40 rounded-lg p-4">
+                <div className="text-gray-400 text-xs uppercase tracking-wide">AHR Impact</div>
+                <div className="text-gray-100 text-sm mt-1">{selectedViolation.ahrImpact || '—'}</div>
+              </div>
+              <div className="bg-gray-700/40 rounded-lg p-4">
+                <div className="text-gray-400 text-xs uppercase tracking-wide">Date</div>
+                <div className="text-gray-100 text-sm mt-1">{selectedViolation.date || '—'}</div>
+              </div>
+              <div className="bg-gray-700/40 rounded-lg p-4">
+                <div className="text-gray-400 text-xs uppercase tracking-wide">Imported At</div>
+                <div className="text-gray-100 text-sm mt-1">{selectedViolation.importedAt || '—'}</div>
+              </div>
+              <div className="md:col-span-2 bg-gray-700/40 rounded-lg p-4">
+                <div className="text-gray-400 text-xs uppercase tracking-wide">Action Taken</div>
+                <div className="text-gray-100 text-sm mt-1 whitespace-pre-wrap">{selectedViolation.actionTaken || '—'}</div>
+              </div>
+              <div className="md:col-span-2 bg-gray-700/40 rounded-lg p-4">
+                <div className="text-gray-400 text-xs uppercase tracking-wide">Next Steps</div>
+                <div className="text-gray-100 text-sm mt-1 whitespace-pre-wrap">{selectedViolation.nextSteps || '—'}</div>
+              </div>
+              <div className="md:col-span-2 bg-gray-700/40 rounded-lg p-4">
+                <div className="text-gray-400 text-xs uppercase tracking-wide">Options</div>
+                <div className="text-gray-100 text-sm mt-1 whitespace-pre-wrap">{selectedViolation.options || '—'}</div>
+              </div>
+              <div className="md:col-span-2 bg-gray-700/40 rounded-lg p-4">
+                <div className="text-gray-400 text-xs uppercase tracking-wide">Notes</div>
+                <div className="text-gray-100 text-sm mt-1 whitespace-pre-wrap">{selectedViolation.notes || '—'}</div>
+              </div>
+              {selectedViolation.dateResolved && (
+                <div className="md:col-span-2 bg-gray-700/40 rounded-lg p-4">
+                  <div className="text-gray-400 text-xs uppercase tracking-wide">Date Resolved</div>
+                  <div className="text-gray-100 text-sm mt-1">{selectedViolation.dateResolved}</div>
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 pt-0">
+              <button
+                type="button"
+                onClick={() => setSelectedViolation(null)}
+                className="w-full bg-gray-700 hover:bg-gray-600 text-white font-medium py-3 rounded-lg transition-colors min-h-[44px]"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-[#151a26]">
-              <tr>
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Product</th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Issue Type</th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">$ At Risk</th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Impact</th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Status</th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">
-                  <button className="flex items-center gap-1 hover:text-white">
-                    Opened
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
-                </th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-800">
-              {violations.map((violation) => (
-                <tr key={violation.id} className="hover:bg-[#1e2433] transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="text-white font-medium text-sm">{violation.product}</div>
-                    <a 
-                      href={`https://www.amazon.com/dp/${violation.asin}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-orange-500 hover:text-orange-400 text-xs"
-                      title="View on Amazon"
-                    >
-                      {violation.asin}
-                    </a>
-                  </td>
-                  <td className="px-6 py-4 text-gray-300 text-sm">{violation.issueType}</td>
-                  <td className="px-6 py-4 text-white font-medium text-sm">${violation.atRiskSales.toLocaleString()}</td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2.5 py-1 rounded text-xs font-medium ${
-                      violation.impact === 'High' ? 'bg-red-500/20 text-red-400' :
-                      violation.impact === 'Medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                      'bg-green-500/20 text-green-400'
-                    }`}>
-                      {violation.impact}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="px-2.5 py-1 rounded text-xs font-medium bg-gray-700 text-gray-300">
-                      {violation.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-gray-400 text-sm">{violation.opened}</td>
-                  <td className="px-6 py-4">
-                    <button className="text-orange-500 hover:text-orange-400 text-sm font-medium">
-                      View
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      )}
     </div>
   )
 }

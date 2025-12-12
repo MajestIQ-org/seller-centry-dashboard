@@ -1,11 +1,15 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useTenant } from '@/lib/contexts/TenantContext'
+import { useAuth } from '@/lib/contexts/AuthContext'
+import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { SummaryCards } from '@/components/SummaryCards'
 import { ViolationsList, type Violation } from '@/components/ViolationsList'
 import { SubmitTicket } from '@/components/SubmitTicket'
 import { InviteUser } from '@/components/InviteUser'
+import { AccountSwitcher } from '@/components/AccountSwitcher'
 
 interface ViolationsData {
   currentViolations: Violation[]
@@ -37,13 +41,23 @@ async function fetchViolations(sheetId: string): Promise<ViolationsData> {
 }
 
 export default function Home() {
+  const router = useRouter()
   const { sheetId, loading: tenantLoading, error: tenantError, retry: retryTenant } = useTenant()
+  const { signOut } = useAuth()
   const [data, setData] = useState<ViolationsData | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'current' | 'resolved'>('current')
   const [showTicketForm, setShowTicketForm] = useState(false)
   const [showInviteForm, setShowInviteForm] = useState(false)
+
+  const handleLogout = async () => {
+    try {
+      await signOut()
+    } finally {
+      router.replace('/login')
+    }
+  }
 
   useEffect(() => {
     if (sheetId && !tenantLoading) {
@@ -132,98 +146,147 @@ export default function Home() {
     : data?.resolvedViolations || []
 
   return (
-    <div className="min-h-screen bg-[#0f1419]">
-      <header className="bg-[#1a1f2e] border-b border-gray-800 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-8">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-orange-500 rounded flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M10 2L3 7v6c0 5.25 3.75 9 7 9s7-3.75 7-9V7l-7-5z"/>
-                </svg>
+    <ProtectedRoute>
+      <div className="min-h-screen bg-[#0f1419]">
+        <header className="bg-[#1a1f2e] border-b border-gray-800 px-6 py-4">
+          <div className="max-w-7xl mx-auto flex justify-between items-center">
+            <div className="flex items-center gap-8">
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 bg-orange-500 rounded flex items-center justify-center">
+                  <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 2L3 7v6c0 5.25 3.75 9 7 9s7-3.75 7-9V7l-7-5z" />
+                  </svg>
+                </div>
+                <div className="text-white font-bold text-sm leading-none">
+                  <div>SELLER</div>
+                  <div className="text-orange-500">CENTRY</div>
+                </div>
               </div>
-              <div className="text-white font-bold text-sm leading-none">
-                <div>SELLER</div>
-                <div className="text-orange-500">CENTRY</div>
+              <div className="flex items-center gap-2 text-sm text-gray-400">
+                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                <span>Synced Just now</span>
+                <button
+                  type="button"
+                  className="text-gray-500 hover:text-gray-400 inline-flex items-center justify-center min-h-[44px] min-w-[44px]"
+                  aria-label="Refresh data"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
+                  </svg>
+                </button>
               </div>
             </div>
-            <div className="flex items-center gap-2 text-sm text-gray-400">
-              <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-              <span>Synced Just now</span>
-              <button className="text-gray-500 hover:text-gray-400" aria-label="Refresh data">
+            <div className="flex gap-3">
+              <AccountSwitcher />
+              <button
+                type="button"
+                onClick={() => setShowTicketForm(true)}
+                className="flex items-center gap-2 bg-transparent border border-gray-700 hover:border-gray-600 text-white text-sm px-4 py-2 rounded-lg transition-colors min-h-[44px]"
+              >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                  />
+                </svg>
+                Submit Ticket
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowInviteForm(true)}
+                className="flex items-center gap-2 bg-transparent border border-gray-700 hover:border-gray-600 text-white text-sm px-4 py-2 rounded-lg transition-colors min-h-[44px]"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M18 9a3 3 0 11-6 0 3 3 0 016 0zM21 20a6 6 0 00-12 0m12 0v1m0-1h-2m2 0h2m-2 0v-2"
+                  />
+                </svg>
+                Invite
+              </button>
+              <button
+                type="button"
+                className="flex items-center gap-2 bg-transparent border border-gray-700 hover:border-gray-600 text-white text-sm px-4 py-2 rounded-lg transition-colors min-h-[44px]"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                  />
+                </svg>
+                Export
+              </button>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="flex items-center gap-2 bg-transparent border border-gray-700 hover:border-gray-600 text-white text-sm px-4 py-2 rounded-lg transition-colors min-h-[44px]"
+              >
+                Logout
+              </button>
+              <button
+                type="button"
+                className="text-gray-400 hover:text-white inline-flex items-center justify-center min-h-[44px] min-w-[44px]"
+                aria-label="Settings"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                  />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </button>
             </div>
           </div>
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={() => setShowTicketForm(true)}
-              className="flex items-center gap-2 bg-transparent border border-gray-700 hover:border-gray-600 text-white text-sm px-4 py-2 rounded-lg transition-colors min-h-[44px]"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-              </svg>
-              Submit Ticket
-            </button>
-            <button
-              type="button"
-              className="flex items-center gap-2 bg-transparent border border-gray-700 hover:border-gray-600 text-white text-sm px-4 py-2 rounded-lg transition-colors min-h-[44px]"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-              </svg>
-              Export
-            </button>
-            <button
-              type="button"
-              className="text-gray-400 hover:text-white min-h-[44px] px-2"
-              aria-label="Settings"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-            </button>
+        </header>
+
+        <main className="max-w-7xl mx-auto px-6 py-6">
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-white mb-6">Violations Dashboard</h1>
+            <div className="flex gap-0 mb-6">
+              <button
+                onClick={() => setActiveTab('current')}
+                className={`flex-1 py-3 rounded-l-lg font-medium transition-colors min-h-[44px] ${
+                  activeTab === 'current'
+                    ? 'bg-orange-500 text-white'
+                    : 'bg-[#1a1f2e] text-gray-400 hover:text-white'
+                }`}
+              >
+                Active
+              </button>
+              <button
+                onClick={() => setActiveTab('resolved')}
+                className={`flex-1 py-3 rounded-r-lg font-medium transition-colors min-h-[44px] ${
+                  activeTab === 'resolved'
+                    ? 'bg-orange-500 text-white'
+                    : 'bg-[#1a1f2e] text-gray-400 hover:text-white'
+                }`}
+              >
+                Resolved
+              </button>
+            </div>
           </div>
-        </div>
-      </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-6">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-white mb-6">Violations Dashboard</h1>
-          <div className="flex gap-0 mb-6">
-            <button
-              onClick={() => setActiveTab('current')}
-              className={`flex-1 py-3 rounded-l-lg font-medium transition-colors min-h-[44px] ${
-                activeTab === 'current'
-                  ? 'bg-orange-500 text-white'
-                  : 'bg-[#1a1f2e] text-gray-400 hover:text-white'
-              }`}
-            >
-              Active
-            </button>
-            <button
-              onClick={() => setActiveTab('resolved')}
-              className={`flex-1 py-3 rounded-r-lg font-medium transition-colors min-h-[44px] ${
-                activeTab === 'resolved'
-                  ? 'bg-orange-500 text-white'
-                  : 'bg-[#1a1f2e] text-gray-400 hover:text-white'
-              }`}
-            >
-              Resolved
-            </button>
-          </div>
-        </div>
+          <SummaryCards violations={displayViolations} />
+          <ViolationsList violations={displayViolations} />
+        </main>
 
-        <SummaryCards violations={displayViolations} />
-        <ViolationsList violations={displayViolations} />
-      </main>
-
-      {showTicketForm && <SubmitTicket onClose={() => setShowTicketForm(false)} />}
-      {showInviteForm && <InviteUser onClose={() => setShowInviteForm(false)} />}
-    </div>
+        {showTicketForm && <SubmitTicket onClose={() => setShowTicketForm(false)} />}
+        {showInviteForm && <InviteUser onClose={() => setShowInviteForm(false)} />}
+      </div>
+    </ProtectedRoute>
   )
 }

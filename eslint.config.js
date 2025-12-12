@@ -21,6 +21,12 @@ module.exports = defineConfig([
     // Tooling config:
     'eslint.config.js',
     'eslint.config.mjs',
+
+    // Supabase Edge Functions (Deno runtime, not linted by Next rules):
+    'supabase/functions/**',
+
+    // PostCSS config is ESM and not part of app code:
+    'postcss.config.js',
   ]),
 
   // The react-hooks rule `set-state-in-effect` is too aggressive for common async flows.

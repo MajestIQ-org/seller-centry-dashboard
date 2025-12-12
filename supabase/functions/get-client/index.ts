@@ -2,7 +2,9 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { google } from 'npm:googleapis@118'
 
 const serviceAccount = JSON.parse(Deno.env.get('GOOGLE_SERVICE_ACCOUNT_KEY') || '{}')
-const MAPPING_SHEET_ID = '1ASxjV1Cb0W5exhYBi_D3hE3chUU2eUMGdR6ZDKmF_hY'
+// Default matches the mapping sheet referenced in ТЗ.
+const MAPPING_SHEET_ID =
+  Deno.env.get('CLIENT_MAPPING_SHEET_ID') ?? '1p-J1x9B6UlaUNkULjx8YMXRpqKVaD1vRnkOjYTD1qMc'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,11 +17,11 @@ serve(async (req) => {
   }
 
   try {
-    const { subdomain } = await req.json()
+    const { subdomain, merchantId } = await req.json()
 
-    if (!subdomain) {
+    if (!subdomain && !merchantId) {
       return new Response(
-        JSON.stringify({ error: 'Subdomain is required' }),
+        JSON.stringify({ error: 'subdomain or merchantId is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -44,19 +46,29 @@ serve(async (req) => {
     })
 
     const rows = response.data.values || []
-    
-    const clientRow = rows.find((row: string[]) => 
-      row[0]?.toLowerCase().replace(/\s+/g, '-') === subdomain.toLowerCase()
-    )
+
+    const normalizedSubdomain = typeof subdomain === 'string' ? subdomain.toLowerCase() : ''
+    const normalizedMerchantId = typeof merchantId === 'string' ? merchantId.trim() : ''
+
+    const clientRow = rows.find((row: string[]) => {
+      const rowStoreName = String(row[0] || '')
+      const rowMerchantId = String(row[1] || '')
+      const rowSlug = rowStoreName.toLowerCase().replace(/\s+/g, '-')
+
+      if (normalizedMerchantId) return rowMerchantId === normalizedMerchantId
+      return rowSlug === normalizedSubdomain
+    })
 
     if (!clientRow) {
       return new Response(
-        JSON.stringify({ error: 'Client not found for subdomain: ' + subdomain }),
+        JSON.stringify({ error: 'Client not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    const [storeName, merchantId, email, sheetUrl] = clientRow
+    const [storeName, merchantId, _email, sheetUrl] = clientRow
+    const normalizedStoreName = String(storeName || '')
+    const resolvedSubdomain = normalizedStoreName.toLowerCase().replace(/\s+/g, '-')
 
     const sheetIdMatch = sheetUrl?.match(/\/d\/([a-zA-Z0-9-_]+)/)
     const sheetId = sheetIdMatch ? sheetIdMatch[1] : null
@@ -70,10 +82,9 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({
-        storeName: storeName || '',
+        storeName: normalizedStoreName,
+        subdomain: resolvedSubdomain,
         merchantId: merchantId || '',
-        email: email || '',
-        sheetUrl: sheetUrl || '',
         sheetId: sheetId,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
